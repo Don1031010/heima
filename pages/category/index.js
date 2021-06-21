@@ -1,66 +1,77 @@
 // pages/category/index.js
+import { request } from "../../request/index.js";
+
 Page({
 
   /**
    * Page initial data
    */
   data: {
-
+    leftMenuList: [],
+    rightContent: [],
+    currentIndex: 0,
+    scrollTop: 0
   },
+
+  Cates: [],
 
   /**
    * Lifecycle function--Called when page load
    */
   onLoad: function (options) {
+    const Cates = wx.getStorageSync('cates');
+
+    if (!Cates) {
+      this.getCates();
+    } else {
+      if (Date.now() - Cates.time > 1000 * 10) {
+        this.getCates();
+      } else {
+        this.Cates = Cates.data;
+        let leftMenuList = this.Cates.map(v => v.cat_name);
+        let rightContent = this.Cates[0].children;
+
+        this.setData({
+          leftMenuList,
+          rightContent
+        })
+      }
+    }
 
   },
 
-  /**
-   * Lifecycle function--Called when page is initially rendered
-   */
-  onReady: function () {
+  // get category data
+  getCates() {
+    request({
+      "url": "https://api-hmugo-web.itheima.net/api/public/v1/categories"
+    })
+      .then(res => {
+        this.Cates = res.data.message;
 
+        wx.setStorageSync('cates', {
+          time: Date.now(),
+          data: this.Cates
+        })
+
+        let leftMenuList = this.Cates.map(v => v.cat_name);
+        let rightContent = this.Cates[0].children;
+
+        this.setData({
+          leftMenuList,
+          rightContent
+        })
+      })
   },
 
-  /**
-   * Lifecycle function--Called when page show
-   */
-  onShow: function () {
+  handleItemTap(e) {
+    // console.log(e)
+    const { index } = e.currentTarget.dataset;
+    let rightContent = this.Cates[index].children;
 
-  },
-
-  /**
-   * Lifecycle function--Called when page hide
-   */
-  onHide: function () {
-
-  },
-
-  /**
-   * Lifecycle function--Called when page unload
-   */
-  onUnload: function () {
-
-  },
-
-  /**
-   * Page event handler function--Called when user drop down
-   */
-  onPullDownRefresh: function () {
-
-  },
-
-  /**
-   * Called when page reach bottom
-   */
-  onReachBottom: function () {
-
-  },
-
-  /**
-   * Called when user click on the top right corner to share
-   */
-  onShareAppMessage: function () {
-
+    this.setData({
+      currentIndex: index,
+      rightContent,
+      scrollTop: 0
+    })
   }
 })
